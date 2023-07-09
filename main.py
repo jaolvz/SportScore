@@ -2,6 +2,10 @@ import customtkinter as ck
 import tkinter as tk
 from tkinter import ttk
 import scrips
+from datetime import datetime ,timedelta
+from PIL import Image, ImageTk
+import requests
+from io import BytesIO
 
 ck.set_appearance_mode("System")
 ck.set_default_color_theme("dark-blue")
@@ -71,7 +75,8 @@ class Aplicativo(ck.CTk):
         self.title(self.dados_tabela['competition']['name'])
 
         liga_frame = ck.CTkFrame(self, fg_color="#3489eb")
-
+        btnVoltar = ck.CTkButton(liga_frame,text="Voltar", command=lambda: self.telaInicial())
+        btnVoltar.place(y=-3,x=-5)
         # Criando a árvore (tabela)
 
         self.tree = ttk.Treeview(liga_frame, show="headings")
@@ -104,7 +109,7 @@ class Aplicativo(ck.CTk):
         for equipe in self.tabela:
             id_time =  equipe['team']['id']
             posicao = equipe['position']
-            nome_equipe = equipe['team']['name']
+            nome_equipe = equipe['team']['shortName']
             pontos = equipe['points']
             partidas = equipe["playedGames"]
             vitorias = equipe['won']
@@ -120,7 +125,7 @@ class Aplicativo(ck.CTk):
                     tags = ("prelibertadores",)
                 elif posicao > 6 and posicao <= 12:
                     tags = ("sulamericana",)
-                elif posicao >= 16:
+                elif posicao > 16:
                     tags = ("rebaixamento",)
                 else:
                     tags = ""
@@ -134,29 +139,84 @@ class Aplicativo(ck.CTk):
         self.tree.tag_configure("prelibertadores", background="#026625")
         self.tree.tag_configure("sulamericana", background="#5b7ff5")
         self.tree.tag_configure("rebaixamento", background="#ff0000")
-        self.tree.place(x=30, y=30, anchor="nw")
+        self.tree.place(x=30, y=35, anchor="nw")
         self.tree.bind("<Button-1>",lambda event: buscar3jogo(self.tree.focus()))
+
+        frame_proxJogos = ck.CTkFrame(liga_frame, fg_color="white" , width=350, height=300)
+        frame_proxJogos.pack_propagate(0)
+        frame_proxJogos.place(x=30, y=770, anchor="sw")
 
         def buscar3jogo(id):
 
+
             proxsjogos = scrips.pegar_proximo3jogos(id)
+            font_bold = ck.CTkFont(weight="bold")
+
+            for indice, jogo in enumerate(proxsjogos):
+                frame_jogo = tk.Frame(frame_proxJogos,background="white" , width=330, height=80)
+                print(jogo)
+                mandantejogo = ck.CTkLabel(frame_jogo,text_color="black", text=jogo['homeTeam']['shortName'])
+                mandantejogo.place(x=15,rely=0.5, anchor='w')
+
+                responseMandante = requests.get(jogo['homeTeam']['crest'])
+                imageMandante = ck.CTkImage(light_image=Image.open(BytesIO(responseMandante.content)),
+                                            dark_image=Image.open(BytesIO(responseMandante.content)), size=(25, 25))
+                label_img_Mandante = ck.CTkLabel(frame_jogo, image=imageMandante, text="")
+                label_img_Mandante.place( x=40, rely=0.8, anchor='center')
 
 
-            frame_jogo1 = ck.CTkFrame(frame_proxJogos, width=350, height=100)
-            frame_jogo1.pack()
-            frame_jogo2 = ck.CTkFrame(frame_proxJogos, width=350, height=100)
-            frame_jogo2.pack()
-            frame_jogo3 = ck.CTkFrame(frame_proxJogos, width=350, height=100)
-            frame_jogo3.pack()
 
 
 
-        frame_proxJogos = ck.CTkFrame(liga_frame, fg_color="white" , width=350, height=300)
+                rodada = ck.CTkLabel(frame_jogo, text_color="#72767d", text=f"Rodada {jogo['matchday']}")
+                rodada.place(relx=0.5, rely=0.8, anchor='center')
+
+                dataFormatada = datetime.fromisoformat(jogo['utcDate'][:-1])
+                dataFormatada = dataFormatada - timedelta(hours=3)
+                dataFormatada = dataFormatada.strftime("%d/%m - %H:%M")
+
+                data = ck.CTkLabel(frame_jogo, text_color="#72767d", text=f"{dataFormatada}")
+                data.place(relx=0.5, rely=0.2, anchor='center')
 
 
-        frame_proxJogos.place(x=30, y=770, anchor="sw")
+                versus = ck.CTkLabel(frame_jogo,text_color="black",font=font_bold, text="X")
+                versus.place(relx =0.5, rely=0.5, anchor='center')
 
-        liga_frame.place(relwidth=1, relheight=1,)
+                visitantejogo = ck.CTkLabel(frame_jogo,text_color="black", text=jogo['awayTeam']['shortName'])
+                visitantejogo.place(x=315, rely=0.5, anchor='e')
+
+                responseVisitante = requests.get(jogo['awayTeam']['crest'])
+                imageVisitante = ck.CTkImage(light_image=Image.open(BytesIO(responseVisitante.content)),
+                                            dark_image=Image.open(BytesIO(responseVisitante.content)), size=(25, 25))
+                label_img_Visitante = ck.CTkLabel(frame_jogo, image=imageVisitante, text="")
+                label_img_Visitante.place(x=290, rely=0.8, anchor='center')
+
+                frame_jogo.place(y=100*indice+10, relx=0.5, anchor="n")
+
+
+        label_Artilheiros = ck.CTkLabel(liga_frame,text="Artilheiros")
+        label_Artilheiros.place(x=595, y=15, anchor='center')
+
+
+        frame_Artilheiros = ck.CTkFrame(liga_frame,width=350, height=430)
+        frame_Artilheiros.place(x=595, y=35, anchor="n")
+        frame_Artilheiros.pack_propagate(0)
+        artilheiros = scrips.artilheiros_Campeonato(liga_cod)
+        for jogador in artilheiros:
+            print(jogador)
+            frame_jogador = ck.CTkFrame(frame_Artilheiros,width=350, height=43)
+            frame_jogador.pack_propagate(0)
+            frame_jogador.pack()
+            nome_jogador = ck.CTkLabel(frame_jogador, text=jogador['player']['name'])
+            nome_jogador.place(relx=0.5, rely=0.5, anchor='center')
+            sigla_time_jogador = ck.CTkLabel(frame_jogador, text=jogador['team']['tla'])
+            sigla_time_jogador.place(relx=0.1, rely=0.5, anchor='center')
+            gols_jogador = ck.CTkLabel(frame_jogador, text=jogador ['goals'])
+            gols_jogador.place(relx=0.85, rely=0.5, anchor='center')
+
+
+
+        liga_frame.place(relwidth=1, relheight=1)
 
 
 

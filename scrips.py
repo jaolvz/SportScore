@@ -20,12 +20,22 @@ def pegando_tabela_por_cod (cod_liga):
 
 
 
+def artilheiros_Campeonato(cod_liga):
+    url = f"http://api.football-data.org/v4/competitions/{cod_liga}/scorers"
+    headers = {"X-Auth-Token": f"{key_apiFootball}"}
+
+    response = requests.get(url, headers=headers)
 
 
+    if response.status_code == 200:
+        jogadores = response.json()
+        jogadores= jogadores["scorers"]
+        return jogadores
+    else:
+        print(f"Erro {response.status_code}")
 
-
-def pegar_proximo3jogos(id):
-    url = f"https://api.football-data.org/v4/teams/{id}/matches?&status=SCHEDULED"
+def pegar_proximo3jogos(id_time):
+    url = f"https://api.football-data.org/v4/teams/{id_time}/matches?&status=SCHEDULED"
     headers = {'X-Auth-Token': key_apiFootball}
     response = requests.get(url, headers=headers)
 
@@ -36,3 +46,5 @@ def pegar_proximo3jogos(id):
         return next_matches
     else:
         print(f"Erro")
+
+
