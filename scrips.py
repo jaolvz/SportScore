@@ -1,9 +1,9 @@
 import requests
 
 
-#20b05f9eba37417fba75dbc42d5773fd
 
-key_apiFootball="20b05f9eba37417fba75dbc42d5773fd"
+
+key_apiFootball="x"
 
 def pegando_tabela_por_cod (cod_liga):
     url = f"http://api.football-data.org/v4/competitions/{cod_liga}/standings"
